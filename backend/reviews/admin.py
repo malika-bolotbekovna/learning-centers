@@ -3,6 +3,6 @@ from .models import Review
 
 @admin.register(Review)
 class ReviewAdmin(admin.ModelAdmin):
-    list_display = ("id", "program", "author", "rating", "is_published", "created_at")
+    list_display = ("id", "center", "author", "rating", "is_published", "created_at")
     list_filter = ("is_published", "rating")
-    search_fields = ("program__title", "author__username")
+    search_fields = ("center__title", "author__username")

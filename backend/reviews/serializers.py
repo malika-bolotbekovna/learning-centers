@@ -6,7 +6,7 @@ class ReviewSerializer(serializers.ModelSerializer):
 
     class Meta:
         model = Review
-        fields = ("id", "program", "author", "author_name", "rating", "text", "is_published", "created_at")
+        fields = ("id", "center", "author", "author_name", "rating", "text", "is_published", "created_at")
         read_only_fields = ("author",)
 
     def validate_rating(self, value):

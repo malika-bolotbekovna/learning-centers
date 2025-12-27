@@ -13,7 +13,7 @@ class CategoryAdmin(admin.ModelAdmin):
 
 @admin.register(Program)
 class ProgramAdmin(admin.ModelAdmin):
-    list_display = ("id", "title", "center", "format", "price", "rating_avg", "is_active")
+    list_display = ("id", "title", "center", "format", "price", "is_active")
     list_filter = ("format", "category")
     search_fields = ("title", "center__name")
 

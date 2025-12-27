@@ -1,8 +1,11 @@
 from rest_framework.permissions import BasePermission, SAFE_METHODS
+from user.models import Role
 
 class IsAdminOrReadOnly(BasePermission):
     def has_permission(self, request, view):
         if request.method in SAFE_METHODS:
             return True
-        u = request.user
-        return bool(u and u.is_authenticated and getattr(u, "is_admin", False))
+        user = request.user
+        return bool(
+            user and user.is_authenticated and getattr(user, "role", None) == Role.ADMIN
+        )

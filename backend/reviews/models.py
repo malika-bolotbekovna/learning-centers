@@ -1,9 +1,9 @@
 from django.db import models
 from django.conf import settings
-from core.models import Program
+from core.models import Center
 
 class Review(models.Model):
-    program = models.ForeignKey(Program, on_delete=models.CASCADE, related_name="reviews")
+    center = models.ForeignKey(Center, on_delete=models.CASCADE, related_name="reviews")
     author = models.ForeignKey(settings.AUTH_USER_MODEL, on_delete=models.CASCADE, related_name="reviews")
     rating = models.PositiveSmallIntegerField()
     text = models.TextField(blank=True)
@@ -13,7 +13,7 @@ class Review(models.Model):
 
     class Meta:
         ordering = ("-created_at",)
-        unique_together = ("program", "author")
+        unique_together = ("center", "author")
 
     def __str__(self):
-        return f"{self.program.title} — {self.rating}★ by {self.author}"
+        return f"{self.center.name} — {self.rating}★ by {self.author}"

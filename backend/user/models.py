@@ -14,4 +14,9 @@ class User(AbstractUser):
 
     @property
     def is_admin(self) -> bool:
-        return self.role == Role.ADMIN or self.is_staff or self.is_superuser
+        return self.role == Role.ADMIN or self.is_superuser
+    
+    def save(self, *args, **kwargs):
+        if self.role == Role.ADMIN:
+            self.is_staff = True
+        super().save(*args, **kwargs)

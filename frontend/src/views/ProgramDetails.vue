@@ -11,10 +11,7 @@
 
       <h1 class="title">{{ program.title || 'Без названия' }}</h1>
 
-      <p
-        v-if="program.center?.description"
-        class="center-description"
-      >
+      <p v-if="program.center?.description" class="center-description">
         {{ program.center.description }}
       </p>
 
@@ -49,7 +46,17 @@
 
       <!-- Actions -->
       <div class="actions">
-        <a v-if="program.url" class="btn btn--primary" :href="program.url" target="_blank" rel="noopener">
+        <button class="btn btn--primary" type="button" @click="showEnrollModal = true">
+          Записаться
+        </button>
+
+        <a
+          v-if="program.url"
+          class="btn btn--ghost"
+          :href="program.url"
+          target="_blank"
+          rel="noopener"
+        >
           Перейти на страницу программы
         </a>
 
@@ -185,11 +192,8 @@
 
             <div class="kv__row" v-if="program.center?.email">
               <div class="kv__key">Email</div>
-              <div class="kv__val">
-                {{ program.center.email }}
-              </div>
+              <div class="kv__val">{{ program.center.email }}</div>
             </div>
-
 
             <div class="kv__row" v-if="program.center?.website">
               <div class="kv__key">Сайт</div>
@@ -217,13 +221,60 @@
             </div>
             <div class="kv__row" v-if="program.contact_email">
               <div class="kv__key">Email</div>
-              <div class="kv__val">
-                {{ program.contact_email }}
-              </div>
+              <div class="kv__val">{{ program.contact_email }}</div>
             </div>
           </div>
         </section>
       </aside>
+    </div>
+
+    <!-- Enroll modal -->
+    <div v-if="showEnrollModal" class="modalOverlay" @click.self="showEnrollModal = false">
+      <div class="modal">
+        <h3 class="modalTitle">Запись на программу</h3>
+
+        <p class="modalText">
+          Для подробной информации и записи на программу
+          <b>{{ program?.title || '—' }}</b>
+          свяжитесь с учебным центром.
+        </p>
+
+        <div class="modalContacts">
+          <div class="modalRow" v-if="program?.center?.phone">
+            <span class="modalKey">Телефон:</span>
+            <a class="modalLink" :href="`tel:${program.center.phone}`">{{ program.center.phone }}</a>
+          </div>
+
+          <div class="modalRow" v-if="program?.center?.email">
+            <span class="modalKey">Email:</span>
+            <a class="modalLink" :href="`mailto:${program.center.email}`">{{ program.center.email }}</a>
+          </div>
+
+          <div class="modalRow" v-if="program?.center?.website">
+            <span class="modalKey">Сайт:</span>
+            <a class="modalLink" :href="program.center.website" target="_blank" rel="noopener">
+              {{ program.center.website }}
+            </a>
+          </div>
+
+          <div class="modalRow" v-if="!program?.center?.phone && !program?.center?.email && !program?.center?.website">
+            <span class="modalKey">Контакты:</span>
+            <span>Не указаны</span>
+          </div>
+        </div>
+
+        <div class="modalActions">
+          <button class="btn" @click="showEnrollModal = false">Закрыть</button>
+          <a
+            v-if="program?.center?.phone"
+            class="btn btn--primary"
+            :href="`tel:${program.center.phone}`"
+            @click="showEnrollModal = false"
+          >
+            Позвонить
+          </a>
+        </div>
+      </div>
     </div>
   </section>
 
@@ -242,6 +293,7 @@ type ProgramAny = Record<string, any>
 
 const route = useRoute()
 const program = ref<ProgramAny | null>(null)
+const showEnrollModal = ref(false)
 
 onMounted(async () => {
   const { data } = await api.get(`/programs/${route.params.id}/`)
@@ -261,7 +313,6 @@ const priceText = computed(() => {
   if (!program.value) return ''
   const cur = program.value.currency || 'KGS'
   const p = program.value.price
-
   if (p == null || p === '') return ''
   return `${p} ${cur}`
 })
@@ -282,7 +333,6 @@ const contactsBlock = computed(() => {
 })
 
 function formatDate(value: string) {
-  // value может быть ISO: 2025-12-12T10:00:00Z или 2025-12-12
   const d = new Date(value)
   if (Number.isNaN(d.getTime())) return value
   return d.toLocaleDateString('ru-RU', { year: 'numeric', month: 'long', day: '2-digit' })
@@ -313,11 +363,6 @@ function formatDate(value: string) {
 
 .spacer { flex: 1; }
 
-.meta {
-  font-size: 12px;
-  color: #6b7280;
-}
-
 .title {
   font-size: 28px;
   line-height: 1.15;
@@ -325,6 +370,7 @@ function formatDate(value: string) {
   color: #111827;
   letter-spacing: -0.02em;
 }
+
 .center-description {
   margin-top: 8px;
   margin-bottom: 14px;
@@ -520,23 +566,6 @@ function formatDate(value: string) {
   text-decoration: underline;
 }
 
-.raw summary {
-  cursor: pointer;
-  font-weight: 700;
-  color: #111827;
-}
-
-.raw pre {
-  margin-top: 12px;
-  padding: 12px;
-  border-radius: 12px;
-  background: #0b1220;
-  color: #e5e7eb;
-  font-size: 12px;
-  line-height: 1.55;
-  overflow: auto;
-}
-
 .loading {
   min-height: 55vh;
   display: grid;
@@ -563,5 +592,81 @@ function formatDate(value: string) {
   .grid { grid-template-columns: 1fr; }
   .kv__row { grid-template-columns: 1fr; gap: 4px; }
   .kv__key { font-size: 12px; }
+}
+
+/* ===== Enroll Modal ===== */
+.modalOverlay {
+  position: fixed;
+  inset: 0;
+  background: rgba(0, 0, 0, 0.55);
+  display: grid;
+  place-items: center;
+  z-index: 1000;
+  padding: 16px;
+}
+
+.modal {
+  width: min(520px, 100%);
+  background: #fff;
+  border-radius: 18px;
+  padding: 18px;
+  box-shadow: 0 18px 60px rgba(0, 0, 0, 0.25);
+  border: 1px solid rgba(17, 24, 39, 0.12);
+}
+
+.modalTitle {
+  margin: 0 0 8px;
+  font-size: 18px;
+  font-weight: 900;
+  color: #111;
+}
+
+.modalText {
+  margin: 0 0 14px;
+  color: #111;
+  opacity: 0.85;
+  line-height: 1.5;
+}
+
+.modalContacts {
+  display: grid;
+  gap: 10px;
+  padding: 12px;
+  border-radius: 14px;
+  background: #f9fafb;
+  border: 1px solid rgba(17, 24, 39, 0.08);
+}
+
+.modalRow {
+  display: grid;
+  grid-template-columns: 110px 1fr;
+  gap: 10px;
+  align-items: baseline;
+}
+
+.modalKey {
+  font-size: 13px;
+  font-weight: 800;
+  color: #111;
+  opacity: 0.7;
+}
+
+.modalLink {
+  color: #1a5cff;
+  font-weight: 800;
+  text-decoration: none;
+  word-break: break-word;
+}
+
+.modalLink:hover {
+  text-decoration: underline;
+}
+
+.modalActions {
+  margin-top: 14px;
+  display: flex;
+  gap: 10px;
+  justify-content: flex-end;
+  flex-wrap: wrap;
 }
 </style>

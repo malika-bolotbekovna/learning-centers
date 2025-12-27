@@ -1,9 +1,11 @@
 from rest_framework import viewsets, permissions, filters
 from django_filters.rest_framework import DjangoFilterBackend
+from django.shortcuts import get_object_or_404
 from .models import Center, Program, Category, Favorite
 from .serializers import CenterSerializer, ProgramSerializer, CategorySerializer, FavoriteSerializer
 from .permissions import IsAdminOrReadOnly
 from .filters import ProgramFilter
+from .pagination import SafePageNumberPagination
 
 class CenterViewSet(viewsets.ModelViewSet):
     queryset = Center.objects.filter(is_active=True)
@@ -22,6 +24,7 @@ class CategoryViewSet(viewsets.ModelViewSet):
 
 
 class ProgramViewSet(viewsets.ModelViewSet):
+    pagination_class = SafePageNumberPagination
     queryset = Program.objects.select_related(
         "center", "category"
     ).filter(is_active=True)
@@ -45,30 +48,31 @@ class ProgramViewSet(viewsets.ModelViewSet):
         "center__city",
     ]
 
-    ordering_fields = ["created_at", "price", "rating_avg"]
+    ordering_fields = ["created_at", "price"]
     ordering = ["-created_at"]
 
 
 class FavoriteViewSet(viewsets.ModelViewSet):
-    queryset = Favorite.objects.none()  # важно для генерации схемы
+    queryset = Favorite.objects.none()
     serializer_class = FavoriteSerializer
     permission_classes = [permissions.IsAuthenticated]
-    # если используешь стандартный router — оставь pk по умолчанию
 
     def get_queryset(self):
-        # Когда spectacular генерит схему — не дергаем БД и не трогаем request.user
         if getattr(self, "swagger_fake_view", False):
-            return Favorite.objects.none()
-
-        user = self.request.user
-        if not user.is_authenticated:
             return Favorite.objects.none()
 
         return (
             Favorite.objects
-            .filter(user=user)  # важно: user=..., не user_id=self.request.user
+            .filter(user=self.request.user)
             .select_related("program", "program__center", "program__category")
         )
-    # при пост запросе юзера передаем не в теле запроса
+
+    def get_object(self):
+        return get_object_or_404(
+            Favorite,
+            pk=self.kwargs["pk"],
+            user=self.request.user
+        )
+
     def perform_create(self, serializer):
         serializer.save(user=self.request.user)

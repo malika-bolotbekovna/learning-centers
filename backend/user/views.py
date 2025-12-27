@@ -5,6 +5,8 @@ from rest_framework.views import APIView
 from rest_framework.response import Response
 from rest_framework.permissions import AllowAny, IsAuthenticated
 from rest_framework import status
+from rest_framework.viewsets import ModelViewSet
+from .permissions import IsAdminRole
 
 from .serializers import LoginSerializer
 
@@ -26,3 +28,8 @@ class MeView(generics.RetrieveAPIView):
     permission_classes = [IsAuthenticated]
     def get_object(self):
         return self.request.user
+
+class UserAdminViewSet(ModelViewSet):
+    queryset = User.objects.all()
+    serializer_class = UserSerializer
+    permission_classes = [IsAdminRole]

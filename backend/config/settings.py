@@ -100,6 +100,11 @@ REST_FRAMEWORK = {
     },
 }
 
+AUTHENTICATION_BACKENDS = [
+    "django.contrib.auth.backends.ModelBackend",
+    "user.auth_backends.RoleAdminBackend",
+]
+
 SPECTACULAR_SETTINGS = {
     "TITLE": "Learning Centers API",
     "VERSION": "1.0.0",

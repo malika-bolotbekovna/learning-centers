@@ -25,7 +25,7 @@ class ProgramSerializer(serializers.ModelSerializer):
         fields = (
             "id", "title", "description", "center", "center_id", "category", "category_id",
             "topic", "format", "price", "currency", "schedule",
-            "age_min", "age_max", "rating_avg", "is_active", "created_at"
+            "age_min", "age_max", "is_active", "created_at"
         )
 
 class FavoriteSerializer(serializers.ModelSerializer):
