@@ -18,6 +18,19 @@
         <option value="MIXED">Смешанный</option>
       </select>
 
+      <!-- ✅ Фильтр по категории -->
+      <select v-model="catalog.filters.category" @change="onFiltersChange" :disabled="categoriesLoading">
+        <option value="">
+          {{ categoriesLoading ? 'Категории: загрузка…' : 'Категория: любая' }}
+        </option>
+        <option v-for="c in categories" :key="c.id" :value="c.id">
+          {{ c.name }}
+        </option>
+      </select>
+    </div>
+
+    <div v-if="categoriesError" class="cat-error">
+      {{ categoriesError }}
     </div>
 
     <!-- Загрузка -->
@@ -57,10 +70,13 @@
 <script setup lang="ts">
 import { onMounted, ref, computed } from 'vue'
 import { useRouter } from 'vue-router'
+import api from '@/api/axios'
 import { useCatalog } from '@/stores/catalog'
 import { useFavorites } from '@/stores/favorites'
 import { useAuth } from '@/stores/auth'
 import ProgramCard from '@/components/ProgramCard.vue'
+
+type Category = { id: number; name: string; slug?: string }
 
 const router = useRouter()
 const catalog = useCatalog()
@@ -69,6 +85,25 @@ const auth = useAuth()
 
 const showAuthModal = ref(false)
 const isAuth = computed(() => !!auth.user)
+
+/** ✅ Категории для фильтра */
+const categories = ref<Category[]>([])
+const categoriesLoading = ref(false)
+const categoriesError = ref<string | null>(null)
+
+async function loadCategories() {
+  categoriesLoading.value = true
+  categoriesError.value = null
+  try {
+    const { data } = await api.get('/categories/')
+    categories.value = Array.isArray(data) ? data : (data?.results ?? [])
+  } catch (e: any) {
+    categoriesError.value = e?.response?.data?.detail || 'Не удалось загрузить категории'
+    categories.value = []
+  } finally {
+    categoriesLoading.value = false
+  }
+}
 
 async function onToggleFavorite(programId: number) {
   if (!isAuth.value) {
@@ -94,6 +129,9 @@ function goRegister() {
 }
 
 onMounted(async () => {
+  // ✅ подгружаем категории для фильтра
+  await loadCategories()
+
   // первая загрузка каталога
   if (!catalog.programs.length) {
     await catalog.load()
@@ -127,6 +165,13 @@ onMounted(async () => {
   border: 1px solid rgba(17, 24, 39, 0.14);
   font-size: 14px;
   background: #fff;
+}
+
+.cat-error {
+  margin-top: -6px;
+  margin-bottom: 10px;
+  color: #b91c1c;
+  font-weight: 700;
 }
 
 .loading {
@@ -163,7 +208,6 @@ onMounted(async () => {
   min-width: 0;
   grid-column: auto !important;
 }
-
 
 /* ===== Modal ===== */
 .modalOverlay {
@@ -221,6 +265,7 @@ onMounted(async () => {
   color: #fff;
   background: linear-gradient(135deg, #4f7cff, #1a5cff);
 }
+
 .ghost {
   background: #fff;
   border: 1px solid #4f7cff;
@@ -235,5 +280,4 @@ onMounted(async () => {
 .ghost:active {
   background: rgba(79, 124, 255, 0.16);
 }
-
 </style>
